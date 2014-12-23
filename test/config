@@ -1,0 +1,7 @@
+<server>
+ip=192.168.17.101
+port=8888
+home=/home/shaman/www
+domain=
+localhost=
+</server>
