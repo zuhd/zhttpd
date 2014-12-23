@@ -1,0 +1,4 @@
+TODO LIST
+1, 只发送错误码，是无法让页面获取信息的 必须要发送content
+2, 如果服务器要保留keep-alive功能，要必须把keep-alive的开关以及timeout发给浏览器
+3, 服务器使用session保持会话，客户端用cookie保留信息，该cookie是服务器返回的一段文本，并设置max-age
