@@ -147,6 +147,47 @@ static int get_httpver(char* data, int len, struct _zhttp_request* request)
 	return 10;
 }
 
+// 不再移动指针
+static int get_content_len(char* data, int len, struct _zhttp_request* request)
+{
+	if (data == NULL)
+	{
+		return -1;
+	}
+	const char* cl = "Content-Length: ";
+	int cl_len = strlen(cl);
+	char* p1 = strstr(data, cl);	
+	char* p2 = strstr(data, HTTP_EOF);
+	if (p1 == NULL ||
+		p2 == NULL)
+	{
+		return -1;
+	}
+	char len[16] = {0};
+	strncpy(len, p1 + cl_len, p2 - p1 - cl_len);
+	request->zr_content_len = atoi(len);
+	return request->zr_content_len;
+}
+
+// 获取post的content
+static int get_content(char* data, int len, struct _zhttp_request* request)
+{
+	if (data == NULL)
+	{
+		return -1;
+	}
+	if (request->zr_content_len <= 0 ||
+		request->zr_content_len > MAX_CONTENT_LEN)
+	{
+		return -1;
+	}
+	const char* header_eof = "\r\n\r\n";
+	int eof_len = strlen(header_eof);
+	char* p = strstr(data, header_eof);
+	strncpy(request->content, p + eof_len, request->zr_content_len);
+	return 0;
+}
+
 int on_zhttp_request(struct _zhttp_session* session, struct _zhttp_request* request)
 {
 	if (session == NULL)
@@ -212,6 +253,9 @@ int on_zhttp_request(struct _zhttp_session* session, struct _zhttp_request* requ
 	}
 	
 	p += ret;
+
+	get_content_len(p, len, request);
+	get_content(p, len, request);
 	
 	// TODO more works about the body
 	on_zhttp_response(session, request);

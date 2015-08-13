@@ -11,6 +11,7 @@
 #include "log.h"
 #include "session.h"
 #include "request.h"
+#include "cgi.h"
 
 static int get_relative_uri(const char* uri, char* relative)
 {
@@ -299,11 +300,74 @@ static int response_content(struct _zhttp_session* session, struct _zhttp_reques
 	char send_file[MAX_URI] = {0};
 	int fd = session->zs_fd;
 	int ret = get_absolute_path(request->zr_uri, send_file);
+	int len = 0;
+	char header[256] = {0};	
 	if (ret < 0)
 	{
 		request->zr_code = ZSC_503;
 		response_header(session, request);
 		return -1;
+	}
+	// 先判断是否是cgi类型
+	if (check_cgi_request(request))
+	{
+		_zhttp_cgi cgi;
+		char* p = strtok(send_file, "?");
+		if (p != NULL)
+		{
+			strncpy(cgi.script, p, strlen(p) + 1);
+		}
+		on_zhttp_cgi_request(request, &cgi);
+		// TODO run script + para ,释放cgi中的资源
+#ifdef TEST_DEMO		
+		switch(request->zr_httpver)
+		{
+			case HTTP_VER_I09:
+			{
+				strncpy(header, HTTP_VER_C09, strlen(HTTP_VER_C09));
+			}
+			break;
+			case HTTP_VER_I10:
+			{
+				strncpy(header, HTTP_VER_C10, strlen(HTTP_VER_C10));
+			}
+			break;
+			case HTTP_VER_I11:
+			{
+				strncpy(header, HTTP_VER_C11, strlen(HTTP_VER_C11));
+			}
+			break;
+		}
+	
+		strncat(header, ZSC_200_DESC, strlen(ZSC_200_DESC));
+		len = strlen(header);
+		memcpy(session->write_buff + session->write_offset, header, len);
+		session->write_offset += len;
+		len = strlen(HTTP_EOF);
+		memcpy(session->write_buff + session->write_offset, HTTP_EOF, len);
+		session->write_offset += len;
+		char key_value[1024] = {0};
+		char buff[1024] = {0};
+		st_cgi_para_head* head = cgi.head;
+		// 同时在这里释放节点内存
+		st_cgi_para_head* node = NULL;
+		while (head != NULL)
+		{
+			node = head->next;
+			strcat(key_value, head->key, strlen(head->key));
+			strcat(key_value, head->value, strlen(head->value));
+			free(head);
+			head = node;
+		}
+		len = strlen(key_value);
+		sprintf(buff, "Content-Type: text/plain\r\nContent-Length: %d\r\nServer: zhttpd/0.1.0\r\n\r\n", len);
+		memcpy(session->write_buff + session->write_offset, buff, strlen(buff));
+		session->write_offset += strlen(buff);
+		// 拷贝内容
+		memcpy(session->write_buff + session->write_offset, key_value, strlen(key_value));
+		session->write_offset += strlen(key_value);
+#endif
+		return;
 	}
 	int file_fd = open(send_file, O_RDONLY);
 	enum _zhttp_status_code code = ZSC_200;
@@ -347,16 +411,15 @@ static int response_content(struct _zhttp_session* session, struct _zhttp_reques
 		request->zr_code = code;
 		response_header(session, request);
 		return -1;
-	}
+	}	
 	
-	int len = 0;
 	if (session->write_offset >= MAX_MSG_LEN)
 	{
 		code = ZSC_500;
 		request->zr_code = code;
 		response_header(session, request);
 		return -1;
-	}
+	}	
 	
 	// 把数据文件放在chunk中，把包头放在write_buff中
 	// 这样做的话，尽管会浪费一些空间，但是代码方便管理
@@ -417,8 +480,7 @@ static int response_content(struct _zhttp_session* session, struct _zhttp_reques
 	sendlist_insert(session, head);	
 	
 	// response_header(session, request);
-	// 正确的报文，特殊处理
-	char header[256] = {0};	
+	// 正确的报文，特殊处理	
 	switch(request->zr_httpver)
 	{
 		case HTTP_VER_I09:

@@ -2,6 +2,7 @@
 ip=192.168.17.101
 port=8888
 home=/home/shaman/www
+cgi=/home/shaman/www/cgi
 domain=
 localhost=
 </server>

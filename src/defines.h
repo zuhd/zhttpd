@@ -11,6 +11,10 @@
 #define MAX_URI 200
 #define MAX_DOMAIN 128
 #define MAX_USERAGENT 128
+#define MAX_CONTENT_LEN 2048
+#define MAX_KEY_LEN 256
+#define MAX_VALUE_LEN 1024
+#define MAX_SCRIPT_LEN 1024
 
 #define HTTP_VER_C09 ("HTTP/0.9")
 #define HTTP_VER_I09 (9)
@@ -41,6 +45,8 @@
 #define ZSC_501_DESC (" 501 Not Implemented\r\n")
 #define ZSC_502_DESC (" 502 Bad Gateway\r\n")
 #define ZSC_503_DESC (" 503 Service Unavailable\r\n")
+
+#define TEST_DEMO
 
 enum _zhttp_status_code
 {

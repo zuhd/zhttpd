@@ -63,8 +63,8 @@ int accept_cb(int fd)
 		struct epoll_event ev;
 		ev.events = EPOLLIN | EPOLLET;
 		ev.data.fd = connfd;
-	  struct _zhttp_session* session = (struct _zhttp_session*)malloc(sizeof(struct _zhttp_session));
-	  init_session(session);
+	  	struct _zhttp_session* session = (struct _zhttp_session*)malloc(sizeof(struct _zhttp_session));
+	  	init_session(session);
 		session->zs_fd = connfd;
 		ev.data.ptr = session;
 		int ret = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, connfd, &ev);

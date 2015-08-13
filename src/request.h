@@ -14,9 +14,11 @@ struct _zhttp_request
 	int zr_httpver;
 	int zr_keepalive;
 	int zr_sendfile;
+	int zr_content_len;
 	char zr_uri[MAX_URI];
 	char zr_domain[MAX_DOMAIN];
 	char zr_useragent[MAX_USERAGENT];
+	char zr_content[MAX_CONTENT_LEN];
 };
 
 struct _zhttp_session;
